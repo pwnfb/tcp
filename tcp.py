@@ -1,11 +1,4 @@
 #!/usr/bin/env python3 
- """ 
- TCP Ping Test (defaults to port 80, 10000 packets) 
-  
- Usage: ./tcp.py host [port] [maxCount] 
- - Ctrl-C Exits with Results 
- """ 
-  
  import sys 
  import socket 
  import time 
