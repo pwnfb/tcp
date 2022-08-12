@@ -1,106 +1,117 @@
-import sys 
- import time 
+#!/usr/bin/env python3 
+ """ 
+ TCP Ping Test (defaults to port 80, 10000 packets) 
+  
+ Usage: ./tcpping.py host [port] [maxCount] 
+ - Ctrl-C Exits with Results 
+ """ 
+  
+ import sys 
  import socket 
- import random 
- import argparse 
- import threading 
- from colorama import init 
- init() 
+ import time 
+ import signal 
+ from timeit import default_timer as timer 
   
- parser = argparse.ArgumentParser() 
- parser.add_argument("host", action="store", help="Host to connect to") 
- parser.add_argument("-port", "-p", type=int, required=True, help="Which port to connect with") 
- parser.add_argument("-num", "-n", type=int, default=1000, help="Amount of times to probe the host") 
- parser.add_argument("-timeout", "-t", type=int, default=3000, help="How long we should try to connect for until it returns an error (MS)") 
- parser.add_argument("-sleep", "-s", type=int, default=1000, help="Delay until next TCP request (MS)") 
- parser.add_argument("-loop", "-l", default=False, action="store_true", help="Constantly pinging the host (Even if number specified)") 
- parser.add_argument("-ipv4", "-4", default=True, action="store_true", help="Uses IPv4") 
- parser.add_argument("-ipv6", "-6", default=False, action="store_true", help="Uses IPv6") 
+ host = None 
+ port = None 
   
- args = parser.parse_args() 
+ # Default to 10000 connections max 
+ maxCount = 10000 
+ count = 0 
   
- args.timeout /= 1000 
- args.sleep /= 1000 
+ ## Inputs 
   
- def get_ip(host): 
-         try: 
-                 if args.ipv6: 
-                         return socket.getaddrinfo(host, None, socket.AF_INET6)[0][4][0] 
-                 elif args.ipv4: 
-                         return socket.getaddrinfo(host, None, socket.AF_INET)[0][4][0] 
-                 else: 
-                         return socket.gethostbyname(host) 
-         except socket.gaierror: 
-                 sys.exit("Hosts IP address was not retrievable.") 
+ # Required Host 
+ try: 
+     host = sys.argv[1] 
+ except IndexError: 
+     print("Usage: tcpping.py host [port] [maxCount]") 
+     sys.exit(1) 
   
- host = get_ip(args.host) 
+ # Optional Port 
+ try: 
+     port = int(sys.argv[2]) 
+ except ValueError: 
+     print("Error: Port Must be Integer:", sys.argv[3]) 
+     sys.exit(1) 
+ except IndexError: 
+     pass 
   
- def create_sock(): 
-         if args.ipv6: 
-                 sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM) 
-                 data = (host, args.port, 0, 0) 
-         elif args.ipv4: 
-                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
-                 data = (host, args.port) 
+ # Optional maxCount 
+ try: 
+     maxCount = int(sys.argv[3]) 
+ except ValueError: 
+     print("Error: Max Count Value Must be Integer", sys.argv[3]) 
+     sys.exit(1) 
+ except IndexError: 
+     pass 
   
-         return sock, data 
-                         #This Script Was Made By: BLU3#7236 On Discord 
- i = 0 
+ # Pass/Fail counters 
+ passed = 0 
+ failed = 0 
   
- print("""\ 
   
-     ____  __    __  __ ____ 
-    / __ )/ /   / / / /__  / 
-   / __  / /   / / / / /_ <  
-  / /_/ / /___/ /_/ /___/ /  
- /_____/_____/\____//____/   
-                             
+ def getResults(): 
+     """ Summarize Results """ 
   
-                     """) 
+     lRate = 0 
+     if failed != 0: 
+         lRate = failed / (count) * 100 
+         lRate = "%.2f" % lRate 
   
- if args.host != host: 
-         print("Connecting to \033[93m{} ({}) on TCP \033[93m{}".format(args.host, host, args.port)) 
- else: 
-         print("Connecting to \033[93m{} on TCP \033[93m{}".format(args.host, args.port)) 
+     print("\nTCP Ping Results: Connections (Total/Pass/Fail): [{:}/{:}/{:}] (Failed: {:}%)".format((count), passed, failed, str(lRate))) 
   
- class TCPPinger(threading.Thread): 
-         def __init__(self): 
-                 threading.Thread.__init__(self) 
+ def signal_handler(signal, frame): 
+     """ Catch Ctrl-C and Exit """ 
+     getResults() 
+     sys.exit(0) 
   
-         def run(self): 
-                 while True: 
-                         try: 
-                                 sock, data = create_sock() 
+ # Register SIGINT Handler 
+ signal.signal(signal.SIGINT, signal_handler) 
   
-                                 sock.settimeout(args.timeout) 
+ # Loop while less than max count or until Ctrl-C caught 
+ while count < maxCount: 
   
-                                 start = time.time() * 1000 
-                                  
-                                 resp = sock.connect_ex(data) 
+     # Increment Counter 
+     count += 1 
   
-                                 now = int(time.time() * 1000 - start) 
+     success = False 
   
-                                 if resp == 0: 
-                                         print("\033[39mConnected to \033[32m{} Port={} \033[39mTime=\033[32m{}ms \033[39mProtocol=\033[32mTCP".format(host, args.port, now)) 
-                                         time.sleep(args.sleep) 
-                                 else: 
-                                         print("\033[31m{} Got Dropped By @carts.thc".format(host, args.port)) 
-                                         time.sleep(args.sleep) 
+     # New Socket 
+     s = socket.socket( 
+     socket.AF_INET, socket.SOCK_STREAM) 
   
-                                 sock.close() 
-                         except socket.error: 
-                                 print("Socket failure...") 
-                                 time.sleep(args.sleep) 
+     # 1sec Timeout 
+     s.settimeout(1) 
   
- if __name__ == "__main__": 
-         pinger = TCPPinger() 
-         pinger.setDaemon(True) 
-         pinger.start() 
-          
-         while i < args.num: 
-                 try: 
-                         if not args.loop: i += 1 
-                          
-                         time.sleep(1) 
-                 except KeyboardInterrupt: 
-                         break
+     # Start a timer 
+     s_start = timer() 
+  
+     # Try to Connect 
+     try: 
+         s.connect((host, int(port))) 
+         s.shutdown(socket.SHUT_RD) 
+         success = True 
+      
+     # Connection Timed Out 
+     except socket.timeout: 
+         print("Get Dropped By @carts.thc!") 
+         failed += 1 
+     except OSError as e: 
+         print("OS Error:", e) 
+         failed += 1 
+  
+     # Stop Timer 
+     s_stop = timer() 
+     s_runtime = "%.2f" % (1000 * (s_stop - s_start)) 
+  
+     if success: 
+         print("Connected to %s[%s]: tcp_seq=%s time=%s ms" % (host, port, (count-1), s_runtime)) 
+         passed += 1 
+  
+     # Sleep for 1sec 
+     if count < maxCount: 
+         time.sleep(1) 
+  
+ # Output Results if maxCount reached 
+ getResults()
