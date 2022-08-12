@@ -47,17 +47,6 @@ import sys
                          #This Script Was Made By: BLU3#7236 On Discord 
  i = 0 
   
- print("""\ 
-  
-
-  _______ _    _  _____ 
- |__   __| |  | |/ ____|
-    | |  | |__| | |     
-    | |  |  __  | |     
-    | |  | |  | | |____ 
-    |_|  |_|  |_|\_____|
-                        """) 
-  
  if args.host != host: 
          print("Connecting to \033[93m{} ({}) on TCP \033[93m{}".format(args.host, host, args.port)) 
  else: 
