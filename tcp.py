@@ -2,7 +2,7 @@
  """ 
  TCP Ping Test (defaults to port 80, 10000 packets) 
   
- Usage: ./tcpping.py host [port] [maxCount] 
+ Usage: ./tcp.py host [port] [maxCount] 
  - Ctrl-C Exits with Results 
  """ 
   
@@ -13,7 +13,7 @@
  from timeit import default_timer as timer 
   
  host = None 
- port = None 
+ port = 80 
   
  # Default to 10000 connections max 
  maxCount = 10000 
