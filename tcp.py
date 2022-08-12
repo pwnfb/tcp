@@ -47,6 +47,17 @@ import sys
                          #This Script Was Made By: BLU3#7236 On Discord 
  i = 0 
   
+ print("""\ 
+  
+     ____  __    __  __ ____ 
+    / __ )/ /   / / / /__  / 
+   / __  / /   / / / / /_ <  
+  / /_/ / /___/ /_/ /___/ /  
+ /_____/_____/\____//____/   
+                             
+  
+                     """) 
+  
  if args.host != host: 
          print("Connecting to \033[93m{} ({}) on TCP \033[93m{}".format(args.host, host, args.port)) 
  else: 
